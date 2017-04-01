@@ -16,6 +16,8 @@
 
 'use strict';
 
+var loaderUtils = require('loader-utils');
+var ConcatSource = require('webpack-sources').ConcatSource;
 var DynamicTranslationKeyError = require('./DynamicTranslationKeyError');
 var NoTranslationKeyError = require('./NoTranslationKeyError');
 var ConstDependency = require('webpack/lib/dependencies/ConstDependency');
@@ -87,11 +89,16 @@ ExtractTranslationPlugin.prototype.apply = function(compiler) {
         compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
     });
 
+    compiler.plugin('emit', function(compilation, callback) {
+        if (this.output) {
+            var source = new ConcatSource(JSON.stringify(this.keys));
+            compilation.assets[compilation.getPath(this.output)] = source;
+        }
+        callback();
+    }.bind(this));
+
     compiler.plugin('done', function() {
         this.done(this.keys);
-        if (this.output) {
-            require('fs').writeFileSync(this.output, JSON.stringify(this.keys));
-        }
     }.bind(this));
 };
 

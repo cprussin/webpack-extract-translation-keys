@@ -32,7 +32,7 @@ describe('Smoke test for the executable script', function() {
                 },
                 plugins: [
                     new Plugin({
-                        output: path.join(__dirname, 'translation-keys.json')
+                        output: 'translation-keys.json'
                     }),
                     new webpack.ProvidePlugin({'__': 'tranzlate'})
                 ]
