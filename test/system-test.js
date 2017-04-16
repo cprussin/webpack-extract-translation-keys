@@ -6,13 +6,10 @@ const path = require('path');
 const assert = require('assert');
 const fs = require('fs');
 
-function smokeTests(body) {
-    beforeEach(() => {
-        fs.writeFileSync('test/test-data.js', body);
-    });
+function smokeTests(body, extraPlugins) {
+    body();
 
     afterEach(() => {
-        fs.unlinkSync('test/test-data.js');
         if (fs.existsSync('test/output.js')) {
             fs.unlinkSync('test/output.js');
         }
@@ -35,7 +32,18 @@ function smokeTests(body) {
                         output: 'translation-keys.json'
                     }),
                     new webpack.ProvidePlugin({'__': 'tranzlate'})
-                ]
+                ],
+                module: {
+                    rules: [
+                        {
+                            test: /.js$/,
+                            loader: 'babel-loader',
+                            options: {
+                                presets: [ 'env' ]
+                            }
+                        }
+                    ]
+                }
             };
 
             webpack(webpackConfig, (error) => {
@@ -49,5 +57,28 @@ function smokeTests(body) {
     });
 }
 
-describe('When using a global constant', () => smokeTests('const a = __(\'test.key\');'));
-describe('When using an imported method', () => smokeTests('const __ = require(\'something\'); const a = __(\'test.key\');'));
+describe('When using a global constant', () => {
+    smokeTests(() => {
+        beforeEach(() => {
+            fs.writeFileSync('test/test-data.js', 'const a = __(\'test.key\');');
+        });
+
+        afterEach(() => {
+            fs.unlinkSync('test/test-data.js');
+        });
+    });
+});
+
+describe('When using an imported method', () => {
+    smokeTests(() => {
+        beforeEach(() => {
+            fs.writeFileSync('test/something.js', 'module.exports = function() { }');
+            fs.writeFileSync('test/test-data.js', 'const __ = require(\'./something\'); const a = __(\'test.key\');');
+        });
+
+        afterEach(() => {
+            fs.unlinkSync('test/something.js');
+            fs.unlinkSync('test/test-data.js');
+        });
+    });
+});

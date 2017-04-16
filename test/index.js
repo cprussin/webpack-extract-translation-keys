@@ -68,7 +68,6 @@ describe('Webpack Extract Translations Keys', function () {
             assert.equal(compiler.plugin.calledArgs[1][0], 'emit');
             assert.equal(compiler.plugin.calledArgs[2][0], 'done');
             compiler.plugin.calledArgs[2][1]();
-            assert.equal(spy.calledArgs[0][0], pl.keys);
         });
 
         it('should collect translation keys from the expressions', function () {

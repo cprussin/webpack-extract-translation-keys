@@ -27,6 +27,9 @@
   "author": "Dmitriy Kubyshkin <grassator@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^6.4.1",
+    "babel-preset-env": "^1.4.0",
     "bondjs": "^1.2.2",
     "eslint": "^0.21.2",
     "mocha": "^2.2.5",

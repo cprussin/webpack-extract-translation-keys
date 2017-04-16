@@ -38,16 +38,13 @@ function ExtractTranslationPlugin(options) {
 }
 
 ExtractTranslationPlugin.prototype.apply = function(compiler) {
-    var mangleKeys = this.mangleKeys;
-    var keys = this.keys = Object.create(null);
-    var generator = KeyGenerator.create();
-    var functionName = this.functionName;
+    const keys = {};
+    const functionName = this.functionName;
+    //var generator = KeyGenerator.create();
 
-    compiler.plugin('compilation', function(compilation, params) {
-
-        params.normalModuleFactory.plugin('parser', function(parser) {
-
-            parser.plugin('program', function(ast) {
+    compiler.plugin('compilation', (compilation, params) => {
+        compilation.plugin('build-module', (module) => {
+            module.parser.plugin('program', (ast) => {
                 walk.simple(ast, {
                     CallExpression(node) {
                         if (node.callee.name !== functionName) {
@@ -55,18 +52,14 @@ ExtractTranslationPlugin.prototype.apply = function(compiler) {
                         }
 
                         if (!node.arguments.length) {
-                            this.state.module.errors.push(
-                                new NoTranslationKeyError(this.state.module, node)
-                            );
+                            module.errors.push(new NoTranslationKeyError(module, node));
                             return false;
                         }
 
-                        var key = node.arguments[0].value;
+                        const key = node.arguments[0].value;
 
                         if (typeof key !== 'string') {
-                            this.state.module.errors.push(
-                                new DynamicTranslationKeyError(this.state.module, node)
-                            );
+                            module.errors.push(new DynamicTranslationKeyError(module, node));
                             return false;
                         }
 
@@ -80,21 +73,22 @@ ExtractTranslationPlugin.prototype.apply = function(compiler) {
             });
         });
 
-        compilation.dependencyFactories.set(ConstDependency, new NullFactory());
-        compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
+        //compilation.dependencyFactories.set(ConstDependency, new NullFactory());
+        //compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
     });
 
-    compiler.plugin('emit', function(compilation, callback) {
+    compiler.plugin('emit', (compilation, callback) => {
         if (this.output) {
-            var source = new ConcatSource(JSON.stringify(this.keys));
+            var source = new ConcatSource(JSON.stringify(keys));
             compilation.assets[compilation.getPath(this.output)] = source;
         }
         callback();
-    }.bind(this));
+    });
 
-    compiler.plugin('done', function() {
-        this.done(this.keys);
-    }.bind(this));
+    compiler.plugin('done', () => {
+        console.log(keys);
+        this.done(keys);
+    });
 };
 
 module.exports = ExtractTranslationPlugin;
