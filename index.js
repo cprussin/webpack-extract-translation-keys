@@ -44,6 +44,9 @@ ExtractTranslationPlugin.prototype.apply = function(compiler) {
 
     compiler.plugin('compilation', (compilation, params) => {
         compilation.plugin('build-module', (module) => {
+            if (!module.parser) {
+                return;
+            }
             module.parser.plugin('program', (ast) => {
                 walk.simple(ast, {
                     CallExpression(node) {
