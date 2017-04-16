@@ -6,9 +6,9 @@ const path = require('path');
 const assert = require('assert');
 const fs = require('fs');
 
-describe('Smoke test for the executable script', function() {
+function smokeTests(body) {
     beforeEach(() => {
-        fs.writeFileSync('test/test-data.js', 'const a = __(\'test.key\');');
+        fs.writeFileSync('test/test-data.js', body);
     });
 
     afterEach(() => {
@@ -47,4 +47,7 @@ describe('Smoke test for the executable script', function() {
             });
         });
     });
-});
+}
+
+describe('When using a global constant', () => smokeTests('const a = __(\'test.key\');'));
+describe('When using an imported method', () => smokeTests('const __ = require(\'something\'); const a = __(\'test.key\');'));

@@ -16,6 +16,7 @@
 
 'use strict';
 
+var walk = require('acorn/dist/walk');
 var loaderUtils = require('loader-utils');
 var ConcatSource = require('webpack-sources').ConcatSource;
 var DynamicTranslationKeyError = require('./DynamicTranslationKeyError');
@@ -46,42 +47,36 @@ ExtractTranslationPlugin.prototype.apply = function(compiler) {
 
         params.normalModuleFactory.plugin('parser', function(parser) {
 
-            parser.plugin('call ' + functionName, function(expr) {
-                var key;
-                if (!expr.arguments.length) {
-                    this.state.module.errors.push(
-                        new NoTranslationKeyError(this.state.module, expr)
-                    );
-                    return false;
-                }
+            parser.plugin('program', function(ast) {
+                walk.simple(ast, {
+                    CallExpression(node) {
+                        if (node.callee.name !== functionName) {
+                            return false;
+                        }
 
-                key = this.evaluateExpression(expr.arguments[0]);
-                if (!key.isString()) {
-                    this.state.module.errors.push(
-                        new DynamicTranslationKeyError(this.state.module, expr)
-                    );
-                    return false;
-                }
+                        if (!node.arguments.length) {
+                            this.state.module.errors.push(
+                                new NoTranslationKeyError(this.state.module, node)
+                            );
+                            return false;
+                        }
 
-                key = key.string;
+                        var key = node.arguments[0].value;
 
-                var value = expr.arguments[0].value;
+                        if (typeof key !== 'string') {
+                            this.state.module.errors.push(
+                                new DynamicTranslationKeyError(this.state.module, node)
+                            );
+                            return false;
+                        }
 
-                if (!(key in keys)) {
-                    if (mangleKeys) {
-                        value = generator.next().value;
+                        if (!(key in keys)) {
+                            keys[key] = key;
+                        }
+
+                        return false;
                     }
-                    keys[key] = value;
-                }
-
-                if (mangleKeys) {
-                    // This replaces the original string with the new string
-                    var dep = new ConstDependency(JSON.stringify(keys[key]), expr.arguments[0].range);
-                    dep.loc = expr.arguments[0].loc;
-                    this.state.current.addDependency(dep);
-                }
-
-                return false;
+                });
             });
         });
 
